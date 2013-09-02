@@ -353,7 +353,6 @@ var SmpHtml5Ads;
             this.currentAdDuration = undefined;
         },
         onAllAdsComplete: function (adEvent) {
-            this.adUI.disable();
             this.log(adEvent.type);
         },
         onAdError: function (adErrorEvent) {
@@ -369,7 +368,6 @@ var SmpHtml5Ads;
                 this.adsCountdownTimer = setInterval(function () {
                     var timeRemaining = plugin.adsManager.getRemainingTime();
                     // Update UI with timeRemaining
-                    plugin.adUI.timeUpdate(timeRemaining);
                 }, 1000);
             }
         },
