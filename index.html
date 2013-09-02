@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Video Ads Test</title>
+<script type="text/javascript" src="script/require.js"></script>
+<script type="text/javascript">
+requireMap = {
+    "jquery-1":"http://code.jquery.com/jquery-1.10.2.js"
+};
+require({
+    baseUrl: 'http://static.sandbox.dev.bbc.co.uk/',
+    paths: requireMap,
+    waitSeconds: 30
+});
+</script>
+<link rel="stylesheet" type="text/css" href="style/normalise.css" />
+</head>
+<body>
+<script type="text/javascript">
+require(['jquery-1'], function ($) {
+    $(function () {
+        loadVideoIframe('iframeContainer');
+    });
+
+    function loadVideoIframe(iframeContainerId) {
+        var iframeContainer = document.getElementById(iframeContainerId);
+        var iframe = document.createElement('iframe');
+        iframe.src = 'video-iframe.html';
+        iframe.id = 'videoIframe';
+        iframe.style.width = "640px";
+        iframe.style.height = "360px";
+        iframe.style.border = "0";
+        iframe.style.padding = "0";
+        iframe.style.margin = "0";
+        iframe.scrolling = "no";
+        iframeContainer.appendChild(iframe);
+        return iframe;
+    }
+});
+</script>
+    <h1>Video Iframe test</h1>
+    <div id="iframeContainer"></div>
+</body>
+</html>
