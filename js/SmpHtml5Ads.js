@@ -56,7 +56,6 @@ var SmpHtml5Ads;
         /* dom elements */
         this.playerControls = undefined;
         this.adContainer = undefined;
-        this.adUI = undefined;
 
         /* google ad objects */
         this.adsLoader = undefined;
@@ -116,7 +115,6 @@ var SmpHtml5Ads;
                 loadGoogleSdk();
                 /* set up preroll specific markup */
                 this.createAdContainer();
-                this.createAdUI();
                 this.addPlayerListeners();
             }
         },
@@ -138,14 +136,6 @@ var SmpHtml5Ads;
             this.adContainer = document.createElement('div');
             this.adContainer.id = 'adContainer';
             this.playerInterface.container.appendChild(this.adContainer);
-        },
-        /**
-         * To create ad controls we clone the players controls and remove some elements.
-         */
-        createAdUI: function () {
-            this.log('createAdUI');
-            var adUI = new UI(this);
-            this.adUI = adUI;
         },
         addPlayerListeners: function () {
             this.log('addPlayerListeners');
@@ -273,7 +263,6 @@ var SmpHtml5Ads;
             try {
                 if (!this.adsStarted && this.adsLoaded && this.adsManager !== undefined) {
                     // Remove the player controls
-                    this.adUI.enable();
                     // Call play to start showing the ad. Single video and overlay ads will
                     // start at this time; the call will be ignored for ad rules.
                     // Initialize the ads manager. Ad rules playlist will start at this time.
@@ -282,7 +271,6 @@ var SmpHtml5Ads;
                     this.adsManager.start();
                     this.log('called startAds');
                     this.adsStarted = true;
-                    this.adUI.playingState();
                 }
             } catch (adError) {
                 // An error may be thrown if there was a problem with the VAST response.
@@ -418,29 +406,23 @@ var SmpHtml5Ads;
             this.playerInterface.updateUiConfig(  { controls:{ enabled: true} } );
         },
         hideAdControls: function () {
-            this.adUI.hide();
         },
         showAdControls: function () {
-            this.adUI.show();
         },
         showSkipButton: function () {
-            this.adUI.showSkipButton();
         },
         hideSkipButton: function () {
-            this.adUI.hideSkipButton();
         },
         playAd: function () {
             if (this.adsStarted && this.adsPaused) {
                 this.adsPaused = false;
                 this.adsManager.resume();
                 this.startAdsCountdownTimer();
-                this.adUI.playingState();
             }
         },
         pauseAd: function () {
             if (this.adsStarted && !this.adsPaused) {
                 this.adsManager.pause();
-                this.adUI.notPlayingState();
                 this.clearAdsCountdownTimer();
             }
         },
@@ -489,96 +471,7 @@ var SmpHtml5Ads;
         };
     }
 
-    function getTogglePlay(ui) {
-        return getActionFn(function () {
-            if (ui.plugin.adsPaused) {
-                ui.playPauseButton.className = "p_controlBarButton p_pauseButton";
-                ui.plugin.playAd();
-            } else {
-                ui.playPauseButton.className = "p_controlBarButton p_playButton";
-                ui.plugin.pauseAd();
-            }
-        });
-    }
 
-    function getToggleFullscreen(ui) {
-        return getActionFn(function () {
-            ui.plugin.log('fullscreen');
-        });
-    }
-
-    function isNotParent(child, parent) {
-        while (child && child.parentNode) {
-            if (child === parent) {
-                return false;
-            }
-            child = child.parentNode;
-        }
-        return true;
-    }
-
-    function fadeControlBar(ui) {
-        return function (event) {
-            if (isNotParent(event.relatedTarget, document.body)) {
-                ui.hideControlBar();
-            }
-        };
-    }
-
-    function setButton(button, className, title, ariaLabel) {
-        if (button) {
-            button.setAttribute("aria-label", ariaLabel);
-            button.className = "p_controlBarButton " + className;
-            button.title = title;
-        }
-    }
-
-    function getButton(className, func, title, ariaLabel, index, ui) {
-        var button = document.createElement('a');
-        button.tabIndex = index;
-        if (func) {
-            button.addEventListener("touchend", func);
-            button.addEventListener("click", func);
-            button.addEventListener("keyup", func);
-        }
-        button.setAttribute("aria-role", "button");
-        button.addEventListener("focusin", function () {
-            ui.showControlBar();
-        });
-        button.addEventListener("focusout", fadeControlBar(ui));
-        setButton(button, className, title, ariaLabel);
-        return button;
-    }
-
-    /*
-     * Show the ad control bar if
-     */
-    function showControlBar(ui) {
-        var acting = false,
-            resetActing = function () {
-                acting = false;
-            };
-        return function (event) {
-            if (!acting) {
-                var bk = (event.target === ui.container);
-                acting = true;
-                setTimeout(resetActing, DUPLICATE_EVENT_TIMEOUT);
-                if (event.type === "mousemove") {
-                    if (ui.plugin.active) {
-                        ui.showControlBar();
-                    }
-                    return;
-                }
-                if (ui.controls) {
-                    if (ui.controls.visible && bk) {
-                        ui.hideControlBar();
-                    } else {
-                        ui.showControlBar();
-                    }
-                }
-            }
-        };
-    }
 
     /**
      * Convert sections into a time display
@@ -618,176 +511,6 @@ var SmpHtml5Ads;
         el.className = cn.trim();
     }
 
-    /**
-     * A functional wrapper for the ad controls
-     *
-     * It takes a player that supports play, pause and skip and a dom tree that represents some controls.
-     *
-     * @param plugin
-     */
-    function UI(plugin) {
-        this.plugin = plugin;
-        this.container = plugin.adContainer;
-        this.listenersAdded = false;
-        this.enabled = true;
-        if (this.container) {
-            this.drawAdLabel();
-            this.drawControlBar();
-            this.addControlBarListeners();
-            this.hide();
-        }
-    }
-
-    UI.prototype = {
-        enable: function () {
-            this.enabled = true;
-            // Set the controls to display, so the fade in works.
-            this.controls.style.display = "block";
-        },
-        disable: function () {
-            this.enabled = false;
-            // This makes sure that the controls aren't clickable.
-            this.controls.style.display = "none";
-        },
-        drawControlBar: function () {
-            var ui = this;
-
-            ui.controls = document.createElement('div');
-            ui.controls.id = "adControls";
-
-            ui.seekBarHolder = document.createElement('div');
-            ui.seekBarHolder.id = "p_playerSeekBarHolder";
-            ui.controls.appendChild(ui.seekBarHolder);
-
-            ui.seekBar = document.createElement('div');
-            ui.seekBar.className = "p_bar p_seekBar";
-            ui.seekBarHolder.appendChild(ui.seekBar);
-
-            ui.progressBar = document.createElement('div');
-            ui.progressBar.className = "p_bar p_progressBar";
-            ui.seekBarHolder.appendChild(ui.progressBar);
-
-            ui.remainingTime = document.createElement('div');
-            ui.remainingTime.id = 'remainingTime';
-            ui.remainingTime.className = "time";
-            ui.seekBarHolder.appendChild(ui.remainingTime);
-
-            ui.playPauseButton = getButton("p_playButton", getTogglePlay(ui), "Play", "Play", 2, ui);
-            ui.fullscreenButton = getButton("p_fullscreenButton", getToggleFullscreen(ui), "Full Screen", "Full Screen", 8, ui);
-
-            ui.controls.appendChild(ui.playPauseButton);
-            ui.controls.appendChild(ui.fullscreenButton);
-
-            ui.container.appendChild(ui.controls);
-            ui.hideControlBar();
-            ui.controls.style.display = "none";
-        },
-        drawAdLabel: function () {
-            var ui = this;
-            ui.adLabel = document.createElement('div');
-            ui.adLabel.id = 'adLabel';
-            ui.adLabel.innerHTML = 'Advertisement';
-            ui.container.appendChild(ui.adLabel);
-            ui.hideAdLabel();
-        },
-        drawSkipButton: function () {
-            var ui = this;
-            ui.skipButton = document.createElement('div');
-            ui.skipButton.className = 'p_skipButton';
-            ui.adLabel.innerHTML = 'Skip Ad';
-            ui.container.appendChild(ui.adLabel);
-            ui.hideSkipButton();
-        },
-        show: function () {
-            if (this.enabled) {
-                this.showAdLabel();
-                this.showControlBar();
-            }
-        },
-        hide: function () {
-            if (this.enabled) {
-                this.hideAdLabel();
-                this.hideControlBar();
-            }
-        },
-        showAdLabel: function () {
-            var ui = this;
-            if (this.enabled && ui.adLabel) {
-                ui.adLabel.style.display = "block";
-                ui.adLabel.visible = true;
-            }
-        },
-        hideAdLabel: function () {
-            var ui = this;
-            if (this.enabled && ui.adLabel) {
-                ui.adLabel.style.display = "none";
-                ui.adLabel.visible = false;
-            }
-        },
-        showControlBar: function () {
-            var ui = this;
-            if (this.enabled && ui.controls) {
-                ui.controls.visible = true;
-                className(ui.controls, "fadedIn", "fadedOut");
-            }
-        },
-        hideControlBar: function () {
-            var ui = this;
-            if (this.enabled && ui.controls) {
-                ui.controls.visible = false;
-                className(ui.controls, "fadedOut", "fadedIn");
-            }
-        },
-        showSkipButton: function () {
-            var ui = this;
-            if (this.enabled && ui.controls) {
-                ui.controls.skipButton.display = 'block';
-            }
-        },
-        hideSkipButton: function () {
-            var ui = this;
-            if (this.enabled && ui.controls) {
-                ui.controls.skipButton.display = 'none';
-            }
-        },
-        playingState: function () {
-            setButton(this.playPauseButton, "p_controlBarButton p_pauseButton", "Pause", "Pause");
-        },
-        notPlayingState: function () {
-            setButton(this.playPauseButton, "p_controlBarButton p_playButton", "Play", "Play");
-        },
-        timeUpdate: function (time) {
-            var ui = this,
-                duration = ui.plugin.currentAdDuration;
-            this.updateRemainingTimeDisplay(time);
-            this.updateProgressBar(((duration - time) / duration), time);
-        },
-        updateRemainingTimeDisplay: function (time) {
-            if (this.remainingTime) {
-                this.remainingTime.textContent = secondsToTime(time);
-            }
-        },
-        updateProgressBar: function (progressFraction) {
-            var ui = this, width, right;
-            if (!ui.seekBar || !ui.progressBar) {
-                return;
-            }
-            width = ui.seekBar.offsetWidth;
-            if (width < 20 || isNaN(progressFraction)) {
-                return;
-            }
-            right = Math.floor(width * (1 - progressFraction)) + 40;
-            ui.progressBar.style.right = right + "px";
-        },
-        addControlBarListeners: function () {
-            var ui = this;
-            if (!ui.listenersAdded) {
-                document.addEventListener("mousemove", showControlBar(ui), true);
-                ui.container.addEventListener("mouseout", fadeControlBar(ui));
-                ui.listenersAdded = true;
-            }
-        }
-    };
 }());
 
 /**
