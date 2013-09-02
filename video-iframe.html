@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>video-iframe</title>
-<script type="text/javascript" src="script/SmpHtml5Ads.js"></script>
+<script type="text/javascript" src="js/SmpHtml5Ads.js"></script>
 <script type="text/javascript">
 
 </script>
@@ -12,13 +12,13 @@ body {
     margin: 0;
     padding: 0;
 }
-.controls {
+.buttons {
     position: absolute;
     z-index: 10;
     left: 10px;
     top: 10px;
 }
-.controls .control-button {
+.buttons .control-button {
     width: 60px;
     height: 30px;
 }
@@ -29,61 +29,63 @@ body {
     <video id="content" src="http://www.w3schools.com/tags/mov_bbb.mp4" width="640" height="360" controls="controls"></video>
 </div>
 <script type="text/javascript">
-function Player (videoElementId) {
-    this.videoElement = document.getElementById(videoElementId);
-
-    this.createControls = function () {
-        this.controls = document.createElement('div');
-        this.controls.className = 'controls';
-
-        this.play = document.createElement('button');
-        this.play.id = 'play';
-        this.play.className = 'control-button';
-        this.play.innerHTML = 'play';
-        this.controls.appendChild(this.play);
-
-        this.pause = document.createElement('button');
-        this.pause.id = 'pause';
-        this.pause.className = 'control-button';
-        this.pause.innerHTML = 'pause';
-        this.controls.appendChild(this.pause);
-
-        this.videoElement.parentNode.appendChild(this.controls);
+/**
+ * Augments a video element to provide the correct API for the plugin.
+ */
+function createPlayerInterface(videoElement) {
+     
+    videoElement.container = videoElement.parentNode;
+    
+    videoElement.playlist = {
+        hasAds : true
     };
-
-    var self = this;
-    this.addEventListeners = function () {
-        this.play.addEventListener('click', function(e) {
-            console.log('play');
-            self.videoElement.play();
-        });
-        this.pause.onclick = function (e) {
-            console.log('pause');
-            self.videoElement.pause();
-        };
+    videoElement.settings = {
+        width : 640,
+        height : 360
     };
+    
+    videoElement.buttons = document.createElement('div');
+    videoElement.buttons.className = 'buttons';
+
+    videoElement.playButton = document.createElement('button');
+    videoElement.playButton.id = 'play';
+    videoElement.playButton.className = 'control-button';
+    videoElement.playButton.innerHTML = 'play';
+    videoElement.buttons.appendChild(videoElement.playButton);
+
+    videoElement.pauseButton = document.createElement('button');
+    videoElement.pauseButton.id = 'pause';
+    videoElement.pauseButton.className = 'control-button';
+    videoElement.pauseButton.innerHTML = 'pause';
+    videoElement.buttons.appendChild(videoElement.pauseButton);
+
+    videoElement.container.appendChild(videoElement.buttons);
+
+    videoElement.playButton.addEventListener('click', function(e) {
+        console.log('play');
+        videoElement.play();
+    });
+    videoElement.pauseButton.onclick = function (e) {
+        console.log('pause');
+        videoElement.pause();
+    };
+    
+    /* stub a method */
+    videoElement.updateUiConfig = function () {};
+    
+    return videoElement;
 }
-playerInstance = new Player('content');
-playerInstance.createControls();
-playerInstance.addEventListeners();
-
-var videoContainer = document.getElementById('videoContainer');
+var videoElement = document.getElementById('content')
+var playerInterface = createPlayerInterface(videoElement);
+console.log(playerInterface);
 /* Set up the utils object for the plugin */
 var utils = {
     loadCSS: function () {
         console.log('loadCSS');
-    }
+    },
+    playerInterface : playerInterface
 };
-utils.playerInterface = playerInstance.videoElement;
-utils.playerInterface.settings = {
-        width : 640,
-        height : 360
-    };
-utils.playerInterface.playlist = {
-    hasAds : true
-};
-utils.playerInterface.updateUiConfig = function () {};
-utils.playerInterface.container = videoContainer;
+
 
 var data = {
     'playerDomId': 'content',

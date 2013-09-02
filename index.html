@@ -3,22 +3,22 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Video Ads Test</title>
-<script type="text/javascript" src="script/require.js"></script>
+<script type="text/javascript" src="js/require.js"></script>
 <script type="text/javascript">
 requireMap = {
-    "jquery-1":"http://code.jquery.com/jquery-1.10.2.js"
+    "jquery":"http://code.jquery.com/jquery-1.10.2"
 };
 require({
-    baseUrl: 'http://static.sandbox.dev.bbc.co.uk/',
+    baseUrl: 'script',
     paths: requireMap,
     waitSeconds: 30
 });
 </script>
-<link rel="stylesheet" type="text/css" href="style/normalise.css" />
+<link rel="stylesheet" type="text/css" href="style/normalize.css" />
 </head>
 <body>
 <script type="text/javascript">
-require(['jquery-1'], function ($) {
+require(['jquery'], function ($) {
     $(function () {
         loadVideoIframe('iframeContainer');
     });
